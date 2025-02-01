@@ -5,14 +5,11 @@ import 'dart:convert';
 import 'Dashboard.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
-
   @override
   _LoginPageState createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage>
-    with SingleTickerProviderStateMixin {
+class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
   final TextEditingController companyIdController = TextEditingController();
   final TextEditingController bookerIdController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -42,44 +39,44 @@ class _LoginPageState extends State<LoginPage>
   }
 
   // Function to call API and validate login
+  // Function to call API and validate login
   Future<void> loginUser() async {
-    // Get input values
     String loginId = bookerIdController.text;
     String passcode = passwordController.text;
+    String companyId = companyIdController.text;
 
-    // Construct the API URL with encoded query parameters
     final String apiUrl = Uri.encodeFull(
-      "http://isofttouch.com/APP471/login1.php?loginId=$loginId&pascode=$passcode",
+      "http://isofttouch.com/APP471/login1.php?loginid=$loginId&pascode=$passcode&compy=$companyId",
     );
 
     try {
-      print("Calling API: $apiUrl"); // Debug log
       var response = await http.get(Uri.parse(apiUrl));
-      print("Response status: ${response.statusCode}"); // Debug log
-      print("Response body: ${response.body}"); // Debug log
-
       var jsonResponse = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
-        // Check for "Status" or "status" key (case-sensitive)
-        if (jsonResponse['Status'] == "Success" ||
-            jsonResponse['status'] == "Success") {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => Dashboard(loginId: loginId),
+      if (response.statusCode == 200 && jsonResponse['jstatus'] == "Success") {
+        String companyName = jsonResponse['jcname']; // Get company name
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Dashboard(
+              loginId: loginId,
+              companyId: companyId,
+              companyName: companyName,
             ),
-          );
-        } else {
-          showErrorDialog("Invalid credentials. Response: ${response.body}");
-        }
+          ),
+        );
       } else {
-        showErrorDialog("Server error: ${response.statusCode}");
+        showErrorDialog("Invalid credentials. Response: ${response.body}");
       }
     } catch (e) {
       showErrorDialog("Network error: $e");
     }
   }
+
+
+
+
 
   // Function to show error messages
   void showErrorDialog(String message) {
@@ -212,9 +209,7 @@ class _LoginPageState extends State<LoginPage>
                         prefixIcon: Icon(Icons.lock, color: Colors.blue),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            isPasswordVisible
-                                ? Icons.visibility
-                                : Icons.visibility_off,
+                            isPasswordVisible ? Icons.visibility : Icons.visibility_off,
                             color: Colors.blue,
                           ),
                           onPressed: () {
@@ -225,7 +220,7 @@ class _LoginPageState extends State<LoginPage>
                         ),
                       ),
                       obscureText: !isPasswordVisible,
-                      keyboardType: TextInputType.text, // Changed to text
+                      keyboardType: TextInputType.number,
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
                       ],
@@ -242,8 +237,7 @@ class _LoginPageState extends State<LoginPage>
                       onPressed: loginUser,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
-                        padding:
-                            EdgeInsets.symmetric(vertical: 15, horizontal: 100),
+                        padding: EdgeInsets.symmetric(vertical: 15, horizontal: 100),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),

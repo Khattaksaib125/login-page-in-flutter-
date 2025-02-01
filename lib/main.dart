@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutterproject/login_page.dart';
+import 'login_page.dart';
 
 void main() {
   runApp(MyApp());
@@ -12,7 +12,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LoginPage(), // Corrected from login_page() to LoginPage()
+      title: 'SoftTouch ERP',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: Colors.blue[50],
+      ),
+      home: LoginPage(),
     );
   }
 }
