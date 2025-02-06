@@ -25,7 +25,7 @@ class Dashboard extends StatefulWidget {
 
 class _DashboardState extends State<Dashboard> {
   bool isRefreshing = false;
-  bool dataFetched = false; // ✅ Ensures data is fetched only once
+  bool dataFetched = false; // Ensures data is fetched only once
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +72,6 @@ class _DashboardState extends State<Dashboard> {
               ),
             ),
           ),
-
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(10.0),
@@ -89,14 +88,7 @@ class _DashboardState extends State<Dashboard> {
                   // Refresh Data Card
                   GestureDetector(
                     onTap: () async {
-                      if (!dataFetched) { // ✅ Prevents multiple refreshes
-                        setState(() => isRefreshing = true);
-                        await refreshCustomerData();
-                        setState(() {
-                          isRefreshing = false;
-                          dataFetched = true;
-                        });
-                      }
+                      await refreshAllData();
                     },
                     child: Card(
                       elevation: 5,
@@ -161,12 +153,29 @@ class _DashboardState extends State<Dashboard> {
     );
   }
 
+  Future<void> refreshAllData() async {
+    try {
+      setState(() => isRefreshing = true);
+
+      // Refresh both customer and product data await refreshCustomerData();
+      await refreshProductData();
+
+      setState(() {
+        isRefreshing = false;
+        dataFetched = true;
+      });
+    } catch (e) {
+      print("Refresh failed: $e");
+      setState(() => isRefreshing = false);
+    }
+  }
+
   Future<void> refreshCustomerData() async {
     try {
       final response = await http.get(Uri.parse("http://isofttouch.com/APP471/customer.php"));
       if (response.statusCode == 200) {
         List<dynamic> rawData = jsonDecode(response.body);
-        print("[DEBUG] Raw API data: $rawData"); // Debug
+        print("[DEBUG] Raw API data: $rawData");
 
         List<Map<String, dynamic>> customers = rawData.map((item) {
           return {
@@ -176,7 +185,7 @@ class _DashboardState extends State<Dashboard> {
           };
         }).toList();
 
-        print("[DEBUG] Processed customers: ${customers.length} items"); // Debug
+        print("[DEBUG] Processed customers: ${customers.length} items");
 
         await DatabaseHelper.instance.clearCustomers();
         for (var customer in customers) {
@@ -191,4 +200,35 @@ class _DashboardState extends State<Dashboard> {
       print("Refresh failed: $e");
     }
   }
+
+  Future<void> refreshProductData() async {
+    try {
+      final response = await http.get(Uri.parse("http://isofttouch.com/APP471/product.php"));
+      if (response.statusCode == 200) {
+        List<dynamic> rawData = jsonDecode(response.body);
+        print("[DEBUG] Raw Product API data: $rawData");
+
+        List<Map<String, dynamic>> products = rawData.map((item) {
+          return {
+            "id": item["cid"]?.toString().trim().toUpperCase() ?? "N/A",
+            "name": item["cname"]?.toString().trim().toUpperCase() ?? "UNKNOWN",
+          };
+        }).toList();
+
+        print("[DEBUG] Processed products: ${products.length} items");
+
+        await DatabaseHelper.instance.clearProducts();
+        for (var product in products) {
+          await DatabaseHelper.instance.insertProduct(product);
+        }
+
+        print("Product data refreshed successfully");
+      } else {
+        print("API Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Refresh failed: $e");
+    }
+  }
+
 }
